@@ -1,40 +1,65 @@
-# Complete cleanup
-cd ~
-sudo rm -rf /usr/local/bin/python3.13* /usr/local/lib/python3.13*
-rm -rf Python-3.13.3*
+#!/bin/bash
+set -e
 
-# Download and extract
-wget https://www.python.org/ftp/python/3.13.3/Python-3.13.3.tgz
-tar -xf Python-3.13.3.tgz
-cd Python-3.13.3
+# Configuration - Set your desired version here or pass as argument
+PYTHON_VERSION="${1:-3.13.3}"  # Default: 3.13.3, Usage: ./script.sh 3.14.0
+INSTALL_PREFIX="/usr/local"
+PYTHON_SHORT_VERSION=$(echo "$PYTHON_VERSION" | cut -d. -f1-2)  # Extracts major.minor (e.g., 3.13)
 
-# Configure with disabled PGO and explicit paths
+# Cleanup previous installation attempts
+echo "Cleaning up previous installations..."
+sudo rm -rf "${INSTALL_PREFIX}/bin/python${PYTHON_SHORT_VERSION}"* \
+            "${INSTALL_PREFIX}/lib/python${PYTHON_SHORT_VERSION}"*
+rm -rf "Python-${PYTHON_VERSION}"*
+
+# Download and extract source
+echo "Downloading Python ${PYTHON_VERSION}..."
+wget "https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz"
+tar -xf "Python-${PYTHON_VERSION}.tgz"
+cd "Python-${PYTHON_VERSION}"
+
+# Build configuration
+echo "Configuring build..."
 ./configure \
-  --prefix=/usr/local \
-  --enable-shared \
-  --with-ensurepip=install \
-  --disable-test-modules \
-  --without-pgo \
-  LDFLAGS="-Wl,-rpath=/usr/local/lib"
+    --prefix="${INSTALL_PREFIX}" \
+    --enable-shared \
+    --with-ensurepip=install \
+    --disable-test-modules \
+    --without-pgo \
+    LDFLAGS="-Wl,-rpath=${INSTALL_PREFIX}/lib"
 
-# Force install standard library
+# Compilation and installation
+echo "Compiling Python (this may take a while)..."
 make -j $(nproc)
+
+echo "Installing Python..."
 sudo make altinstall
 sudo make libinstall
 
-# Check critical paths
-ls -d /usr/local/lib/python3.13/encodings
-ls /usr/local/lib/python3.13/os.py
+# Post-install verification
+echo "Verifying installation..."
+ls -d "${INSTALL_PREFIX}/lib/python${PYTHON_SHORT_VERSION}/encodings"
+ls "${INSTALL_PREFIX}/lib/python${PYTHON_SHORT_VERSION}/os.py"
 
-# Force rebuild pyc files
-sudo find /usr/local/lib/python3.13 -name "*.pyc" -delete
-sudo /usr/local/bin/python3.13 -m compileall /usr/local/lib/python3.13
+# Optimize bytecode
+echo "Rebuilding pyc files..."
+sudo find "${INSTALL_PREFIX}/lib/python${PYTHON_SHORT_VERSION}" -name "*.pyc" -delete
+sudo "${INSTALL_PREFIX}/bin/python${PYTHON_SHORT_VERSION}" -m compileall "${INSTALL_PREFIX}/lib/python${PYTHON_SHORT_VERSION}"
 
-# Add to ~/.bashrc
-echo 'export PYTHONHOME=/usr/local' >> ~/.bashrc
-echo 'export PYTHONPATH=/usr/local/lib/python3.13' >> ~/.bashrc
-echo 'export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH' >> ~/.bashrc
+# Environment configuration
+echo "Updating environment..."
+{
+    echo "export PYTHONHOME='${INSTALL_PREFIX}'"
+    echo "export PYTHONPATH='${INSTALL_PREFIX}/lib/python${PYTHON_SHORT_VERSION}'"
+    echo "export LD_LIBRARY_PATH='${INSTALL_PREFIX}/lib:\$LD_LIBRARY_PATH'"
+    echo "alias python='${INSTALL_PREFIX}/bin/python${PYTHON_SHORT_VERSION}'"
+    echo "alias python3='${INSTALL_PREFIX}/bin/python${PYTHON_SHORT_VERSION}'"
+} >> ~/.bashrc
+
 source ~/.bashrc
 
 # Final validation
-/usr/local/bin/python3.13 -c "import sys, encodings, os; print(sys.prefix)"
+echo "Final checks:"
+"${INSTALL_PREFIX}/bin/python${PYTHON_SHORT_VERSION}" -c "import sys, encodings, os; print(f'\nSuccess! Python {sys.version} installed at {sys.prefix}')"
+
+echo -e "\nInstallation complete! Restart your shell or run: source ~/.bashrc"
