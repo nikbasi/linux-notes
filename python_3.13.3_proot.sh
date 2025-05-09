@@ -75,6 +75,8 @@ echo "Updating environment..."
     echo "alias python3='${INSTALL_PREFIX}/bin/python${PYTHON_SHORT_VERSION}'"
 } >> ~/.bashrc
 
+sudo update-alternatives --install /usr/bin/python python /usr/local/bin/python3.13 1
+
 source ~/.bashrc
 
 # Final validation
