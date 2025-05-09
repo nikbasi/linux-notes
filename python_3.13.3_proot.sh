@@ -1,6 +1,25 @@
 #!/bin/bash
 set -e
 
+# Function to check and install required packages
+install_dependencies() {
+    echo "Checking and installing required packages..."
+    
+    REQUIRED_PACKAGES=(build-essential wget libssl-dev zlib1g-dev libncurses5-dev libncursesw5-dev \
+                       libreadline-dev libsqlite3-dev libgdbm-dev libdb5.3-dev libbz2-dev libexpat1-dev \
+                       liblzma-dev tk-dev uuid-dev libffi-dev)
+
+    for pkg in "${REQUIRED_PACKAGES[@]}"; do
+        if ! dpkg -s "$pkg" &> /dev/null; then
+            echo "Installing missing package: $pkg"
+            sudo apt-get update
+            sudo apt-get install -y "$pkg"
+        fi
+    done
+}
+
+install_dependencies
+
 # Configuration - Set your desired version here or pass as argument
 PYTHON_VERSION="${1:-3.13.3}"  # Default: 3.13.3, Usage: ./script.sh 3.14.0
 INSTALL_PREFIX="/usr/local"
