@@ -44,6 +44,8 @@ su -- {username} 
 whoami
 sudo whoami
 sudo apt install xfce4 -y
+sudo apt update
+sudo apt install chromium -y
 wget https://raw.githubusercontent.com/AndronixApp/AndronixOrigin/master/Uninstall/ubchromiumfix.sh && bash ubchromiumfix.sh
 ```
 
