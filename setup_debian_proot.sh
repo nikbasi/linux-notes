@@ -9,6 +9,10 @@ read -r DEBUSER
 echo "🔒 Enter the password for user '$DEBUSER':"
 read -rs DEBPASS
 
+echo ""
+echo "🐍 Do you want to install Python 3.13.3 inside Debian? (y/n)"
+read -r INSTALL_PYTHON
+
 # --- Termux Setup ---
 echo "📁 Setting up Termux storage..."
 termux-setup-storage
@@ -26,11 +30,11 @@ echo "🐧 Installing Debian via proot-distro..."
 proot-distro install debian
 
 # --- Configure Debian & User ---
-echo "👤 Creating user '$DEBUSER' and installing XFCE & Firefox..."
+echo "👤 Creating user '$DEBUSER' and installing XFCE and Firefox..."
 
 proot-distro login debian -- bash -c "
   apt update -y
-  apt install -y nano adduser sudo
+  apt install -y nano adduser sudo curl
 
   echo 'Adding user $DEBUSER...'
   adduser --disabled-password --gecos '' $DEBUSER
@@ -44,6 +48,20 @@ proot-distro login debian -- bash -c "
     sudo apt install -y xfce4 firefox-esr
   '
 "
+
+# --- Optional Python Install ---
+if [[ "$INSTALL_PYTHON" =~ ^[Yy]$ ]]; then
+  echo "🐍 Installing Python 3.13.3..."
+  proot-distro login debian -- bash -c "
+    su - $DEBUSER -c '
+      wget -O python_installer.sh https://raw.githubusercontent.com/nikbasi/linux-notes/main/python_3.13.3_proot.sh
+      chmod +x python_installer.sh
+      ./python_installer.sh
+    '
+  "
+else
+  echo "⏭️ Skipping Python installation."
+fi
 
 # --- XFCE Startup Script ---
 echo "💻 Downloading XFCE startup script..."
