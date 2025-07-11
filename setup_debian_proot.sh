@@ -30,7 +30,7 @@ echo "🐧 Installing Debian via proot-distro..."
 proot-distro install debian
 
 # --- Configure Debian & User ---
-echo "👤 Creating user '$DEBUSER' and installing XFCE and Firefox..."
+echo "👤 Creating user '$DEBUSER' and installing XFCE, Firefox ESR, and xdg-utils..."
 
 proot-distro login debian -- bash -c "
   apt update -y
@@ -39,13 +39,23 @@ proot-distro login debian -- bash -c "
   echo 'Adding user $DEBUSER...'
   adduser --disabled-password --gecos '' $DEBUSER
   echo '$DEBUSER:$DEBPASS' | chpasswd
-
   echo '$DEBUSER ALL=(ALL:ALL) NOPASSWD:ALL' >> /etc/sudoers
 
   su - $DEBUSER -c '
-    echo \"🔧 Installing XFCE and Firefox\"
+    echo \"🔧 Installing XFCE, Firefox ESR, and xdg-utils...\"
     sudo apt update -y
-    sudo apt install -y xfce4 firefox-esr
+    sudo apt install -y xfce4 firefox-esr xdg-utils
+
+    echo \"🔧 Making firefox-esr default browser using custom xdg-open\"
+    mkdir -p \$HOME/bin
+    cat > \$HOME/bin/xdg-open <<EOF2
+#!/bin/bash
+firefox-esr \"\$@\" &
+EOF2
+    chmod +x \$HOME/bin/xdg-open
+
+    echo \"🔧 Ensuring \$HOME/bin is in PATH\"
+    grep -q 'export PATH=\\\$HOME/bin:\\\$PATH' ~/.bashrc || echo 'export PATH=\$HOME/bin:\$PATH' >> ~/.bashrc
   '
 "
 
