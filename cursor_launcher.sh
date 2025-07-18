@@ -1,4 +1,3 @@
-GNU nano 7.2                                              cursor_launcher.sh
 #!/bin/bash
 set -e
 
